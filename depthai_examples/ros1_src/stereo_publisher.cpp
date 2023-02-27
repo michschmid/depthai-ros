@@ -16,7 +16,7 @@
 #include <depthai_bridge/DisparityConverter.hpp>
 
 
-std::tuple<dai::Pipeline, int, int> createPipeline(bool withDepth, bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh, std::string resolution){
+std::tuple<dai::Pipeline, int, int> createPipeline(bool withDepth, bool lrcheck, bool extended, bool subpixel, int confidence, int LRchecktresh, std::string resolution, float camera_fps){
     dai::Pipeline pipeline;
     dai::node::MonoCamera::Properties::SensorResolution monoResolution; 
     auto monoLeft    = pipeline.create<dai::node::MonoCamera>();
@@ -62,8 +62,10 @@ std::tuple<dai::Pipeline, int, int> createPipeline(bool withDepth, bool lrcheck,
     // MonoCamera
     monoLeft->setResolution(monoResolution);
     monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
+    monoLeft->setFps(camera_fps);
     monoRight->setResolution(monoResolution);
     monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
+    monoRight->setFps(camera_fps);
 
     // StereoDepth
     stereo->initialConfig.setConfidenceThreshold(confidence);
@@ -103,6 +105,7 @@ int main(int argc, char** argv){
     int monoWidth, monoHeight;
     int LRchecktresh = 5;
     std::string monoResolution = "720p";
+    float camera_fps = 30.0f;
     dai::Pipeline pipeline;
 
     badParams += !pnh.getParam("camera_param_uri", cameraParamUri);
@@ -114,6 +117,7 @@ int main(int argc, char** argv){
     badParams += !pnh.getParam("confidence",       confidence);
     badParams += !pnh.getParam("LRchecktresh",     LRchecktresh);
     badParams += !pnh.getParam("monoResolution",   monoResolution);
+    badParams += !pnh.getParam("camera_fps",       camera_fps);
 
     if (badParams > 0)
     {   
@@ -128,7 +132,7 @@ int main(int argc, char** argv){
         enableDepth = false;
     }
 
-    std::tie(pipeline, monoWidth, monoHeight) = createPipeline(enableDepth, lrcheck, extended, subpixel, confidence, LRchecktresh, monoResolution);
+    std::tie(pipeline, monoWidth, monoHeight) = createPipeline(enableDepth, lrcheck, extended, subpixel, confidence, LRchecktresh, monoResolution, camera_fps);
 
     dai::Device device(pipeline);
     auto leftQueue = device.getOutputQueue("left", 30, false);
